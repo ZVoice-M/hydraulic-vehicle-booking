@@ -17,12 +17,15 @@ export function useBookingStore() {
   useEffect(() => {
     if (supabase) {
       const client = supabase;
+
       client.from("vehicles").select("*").order("id", { ascending: true }).then(({ data, error }) => {
         if (!error && data?.length) setBaseVehicles(data as typeof seedVehicles);
       });
+
       client.from("bookings").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
         if (!error && data) setBookings(updateBookingStatuses(data as Booking[]));
       });
+
       const channel = client
         .channel("booking-realtime")
         .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => {
@@ -31,6 +34,7 @@ export function useBookingStore() {
           });
         })
         .subscribe();
+
       return () => {
         client.removeChannel(channel);
       };
@@ -47,7 +51,9 @@ export function useBookingStore() {
 
   useEffect(() => {
     if (supabase) return;
+
     window.localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bookings));
+
     const channel = new BroadcastChannel(CHANNEL);
     channel.postMessage({ clientId: clientId.current, bookings });
     channel.close();
@@ -55,36 +61,48 @@ export function useBookingStore() {
 
   useEffect(() => {
     if (supabase) return;
+
     const channel = new BroadcastChannel(CHANNEL);
+
     channel.onmessage = (event) => {
       if (event.data?.clientId === clientId.current) return;
       setBookings(updateBookingStatuses(event.data?.bookings ?? []));
     };
+
     return () => channel.close();
   }, []);
 
   const vehicles = useMemo(() => {
     return baseVehicles.map((vehicle) => ({
       ...vehicle,
-      status: bookings.some((booking) => booking.vehicle_id === vehicle.id && booking.status === "active") ? "in_use" as const : "available" as const
+      status: bookings.some((booking) => booking.vehicle_id === vehicle.id && booking.status === "active")
+        ? ("in_use" as const)
+        : ("available" as const)
     }));
   }, [baseVehicles, bookings]);
 
   function createBooking(input: BookingFormInput) {
     const result = validateBooking(input, bookings);
+
     if (!result.ok) return result;
+
     setBookings((items) => updateBookingStatuses([...items, result.booking]));
+
     if (supabase) {
-      supabase.from("bookings").insert(result.booking).then(({ error }) => {
+      const client = supabase;
+
+      client.from("bookings").insert(result.booking).then(({ error }) => {
         if (error) console.error("Supabase booking insert failed", error);
       });
     }
+
     return result;
   }
 
   function completeBooking(bookingId: string) {
     const existing = bookings.find((booking) => booking.id === bookingId);
     const now = new Date();
+
     const completed = existing
       ? {
           ...existing,
@@ -100,10 +118,17 @@ export function useBookingStore() {
         return completed ?? booking;
       })
     );
+
     if (supabase && completed) {
-      supabase
+      const client = supabase;
+
+      client
         .from("bookings")
-        .update({ status: "completed", completed_at: completed.completed_at, actual_total_hours: completed.actual_total_hours })
+        .update({
+          status: "completed",
+          completed_at: completed.completed_at,
+          actual_total_hours: completed.actual_total_hours
+        })
         .eq("id", bookingId)
         .then(({ error }) => {
           if (error) console.error("Supabase booking completion failed", error);
