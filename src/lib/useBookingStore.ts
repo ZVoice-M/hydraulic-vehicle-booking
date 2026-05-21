@@ -16,22 +16,23 @@ export function useBookingStore() {
 
   useEffect(() => {
     if (supabase) {
-      supabase.from("vehicles").select("*").order("id", { ascending: true }).then(({ data, error }) => {
+      const client = supabase;
+      client.from("vehicles").select("*").order("id", { ascending: true }).then(({ data, error }) => {
         if (!error && data?.length) setBaseVehicles(data as typeof seedVehicles);
       });
-      supabase.from("bookings").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
+      client.from("bookings").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
         if (!error && data) setBookings(updateBookingStatuses(data as Booking[]));
       });
-      const channel = supabase
+      const channel = client
         .channel("booking-realtime")
         .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => {
-          supabase.from("bookings").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+          client.from("bookings").select("*").order("created_at", { ascending: false }).then(({ data }) => {
             if (data) setBookings(updateBookingStatuses(data as Booking[]));
           });
         })
         .subscribe();
       return () => {
-        supabase.removeChannel(channel);
+        client.removeChannel(channel);
       };
     }
 
