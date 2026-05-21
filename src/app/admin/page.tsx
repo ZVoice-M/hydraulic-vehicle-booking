@@ -51,7 +51,6 @@ export default function AdminPage() {
             <Lock className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-ink">Admin Dashboard</h1>
-          <p className="mt-2 text-sm text-muted">Admin login is required for full booking history, filters, utilization, and export.</p>
           <label className="mt-6 block">
             <span className="mb-2 block text-sm font-semibold text-ink">Password</span>
             <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -60,7 +59,6 @@ export default function AdminPage() {
             <ShieldCheck className="h-4 w-4" />
             Login
           </button>
-          <p className="mt-4 text-xs text-muted">Demo password fallback: admin123. Set NEXT_PUBLIC_ADMIN_PASSWORD before deployment.</p>
         </form>
       </main>
     );
