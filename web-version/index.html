@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hydraulic Vehicle Booking</title>
+    <style>
+      :root {
+        --ink: #111827;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --surface: #f6f7f9;
+        --green: #059669;
+        --red: #dc2626;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--surface);
+        color: var(--ink);
+      }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px 16px 96px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 18px;
+      }
+      h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); letter-spacing: 0; }
+      p { margin: 0; }
+      .muted { color: var(--muted); }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+      }
+      .bar { height: 8px; }
+      .blue { background: #2563eb; }
+      .yellow { background: #eab308; }
+      .red { background: #dc2626; }
+      .green { background: #059669; }
+      .card-body { padding: 18px; }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .badge {
+        border-radius: 999px;
+        padding: 7px 10px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .available { background: var(--green); }
+      .in-use { background: var(--red); }
+      .panel {
+        margin-top: 16px;
+        background: #f9fafb;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 12px;
+        border-top: 1px solid var(--line);
+      }
+      button, a.button {
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: #fff;
+        color: var(--ink);
+        font-weight: 800;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+      }
+      button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+      .admin-link {
+        min-height: 44px;
+        padding: 0 16px;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: rgba(0,0,0,.35);
+        display: none;
+        align-items: end;
+        justify-content: center;
+      }
+      .modal.open { display: flex; }
+      .sheet {
+        width: 100%;
+        max-width: 620px;
+        max-height: 92vh;
+        overflow: auto;
+        background: #fff;
+        border-radius: 24px 24px 0 0;
+      }
+      .sheet-head {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .sheet-body { padding: 16px; }
+      label { display: block; font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+      input, textarea {
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        font: inherit;
+        margin-top: 8px;
+      }
+      textarea { min-height: 90px; resize: vertical; }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .full { grid-column: 1 / -1; }
+      .bottom-nav {
+        position: fixed;
+        inset: auto 0 0;
+        display: none;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        background: #fff;
+        border-top: 1px solid var(--line);
+        padding: 10px 12px;
+      }
+      @media (max-width: 720px) {
+        header { display: block; }
+        .admin-link { display: none; }
+        .grid, .form-grid { grid-template-columns: 1fr; }
+        .bottom-nav { display: grid; }
+      }
+      @media (min-width: 721px) {
+        .modal { align-items: center; padding: 20px; }
+        .sheet { border-radius: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="muted" style="font-weight:800;text-transform:uppercase;font-size:12px;">Key handover made clear</p>
+          <h1>Hydraulic Vehicle Booking</h1>
+          <p class="muted" style="margin-top:8px;max-width:680px;">Check availability, see who has the keys, book a vehicle, and complete handover without late-night coordination calls.</p>
+        </div>
+        <a class="button admin-link" href="../src/app/admin/page.tsx">Admin code</a>
+      </header>
+      <section class="grid" id="vehicles"></section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button onclick="scrollTo({top:0,behavior:'smooth'})">Vehicles</button>
+      <button onclick="openMine()">My Bookings</button>
+      <button onclick="alert('Use the Next.js app /admin route for the full admin dashboard.')">Admin</button>
+    </nav>
+
+    <div class="modal" id="modal">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <h2 id="modalTitle" style="margin:0;">Book Vehicle</h2>
+            <p id="modalSub" class="muted" style="font-size:14px;margin-top:4px;">You can book vehicles only up to 2 days in advance.</p>
+          </div>
+          <button onclick="closeModal()" style="width:42px;min-height:42px;">X</button>
+        </div>
+        <div class="sheet-body" id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      const RULES = { maxHours: 5, maxPerDay: 2, maxSimultaneous: 2, advanceDays: 2, buffer: 15 };
+      const vehicles = [
+        { id: "HV-01", name: "Blue Vehicle", color: "blue" },
+        { id: "HV-02", name: "Yellow Vehicle", color: "yellow" },
+        { id: "HV-03", name: "Red Vehicle", color: "red" },
+        { id: "HV-04", name: "Green Vehicle", color: "green" }
+      ];
+      const key = "hydraulic-static-bookings-v1";
+      const today = new Date();
+      const pad = n => String(n).padStart(2, "0");
+      const dateStr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const timeStr = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const seeded = [
+        { id:"BK-1001", vehicle_id:"HV-01", incharge_name:"Daniel Mathew", mobile_number:"9876543210", zone:"North Zone", fellowship:"Youth Fellowship", booking_date:dateStr(today), start_time:timeStr(new Date(Date.now()-3600000)), end_time:timeStr(new Date(Date.now()+7200000)), duration:180, status:"active", created_at:new Date().toISOString() },
+        { id:"BK-1002", vehicle_id:"HV-02", incharge_name:"Grace Thomas", mobile_number:"9123456780", zone:"East Zone", fellowship:"Women Fellowship", booking_date:dateStr(today), start_time:"17:00", end_time:"19:00", duration:120, status:"upcoming", created_at:new Date().toISOString() }
+      ];
+      let bookings = JSON.parse(localStorage.getItem(key) || "null") || seeded;
+      let currentVehicle = null;
+
+      function dateTime(b, edge) { return new Date(`${b.booking_date}T${edge === "start" ? b.start_time : b.end_time}:00`); }
+      function minutes(a, b) { return Math.round((b - a) / 60000); }
+      function durationText(min) { const h = Math.floor(min / 60), m = min % 60; return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`; }
+      function phone(v) { return String(v || "").replace(/\D/g, "").slice(-10); }
+      function statuses() {
+        const now = new Date();
+        bookings = bookings.map(b => {
+          if (b.status === "completed") return b;
+          if (now < dateTime(b, "start")) return {...b, status:"upcoming"};
+          if (now > dateTime(b, "end")) return {...b, status:"overdue"};
+          return {...b, status:"active"};
+        });
+        localStorage.setItem(key, JSON.stringify(bookings));
+      }
+      function active(vehicleId) { statuses(); return bookings.find(b => b.vehicle_id === vehicleId && b.status === "active"); }
+      function render() {
+        statuses();
+        document.getElementById("vehicles").innerHTML = vehicles.map(v => {
+          const a = active(v.id);
+          const schedule = bookings.filter(b => b.vehicle_id === v.id && b.booking_date === dateStr(today) && b.status !== "completed");
+          return `<article class="card">
+            <div class="bar ${v.color}"></div>
+            <div class="card-body">
+              <div class="row"><div><p class="muted" style="font-size:12px;font-weight:800;">${v.id}</p><h2 style="margin:2px 0 0;">${v.name}</h2></div><span class="badge ${a ? "in-use" : "available"}">${a ? "IN USE" : "AVAILABLE"}</span></div>
+              <div class="panel"><p class="muted" style="font-size:12px;font-weight:800;">Current booking</p>${a ? `<p style="font-weight:800;margin-top:8px;">${a.incharge_name}</p><p class="muted">${a.start_time} - ${a.end_time} · ${a.zone}</p><p style="font-weight:800;color:#b91c1c;">${minutes(new Date(), dateTime(a,"end")) > 0 ? durationText(minutes(new Date(), dateTime(a,"end"))) + " remaining" : "Booking time exceeded"}</p>` : `<p style="font-weight:800;color:#047857;margin-top:8px;">Available now for booking</p>`}</div>
+              <div style="margin-top:14px;"><p style="font-weight:800;margin-bottom:8px;">Today's schedule</p>${schedule.length ? schedule.map(b => `<p class="panel" style="margin:6px 0;">${b.start_time} - ${b.end_time} · ${b.incharge_name}</p>`).join("") : `<p class="panel">No bookings today</p>`}</div>
+            </div>
+            <div class="actions"><button class="primary" onclick="openBook('${v.id}')">Book Vehicle</button><button onclick="openDetails('${v.id}')">Details</button></div>
+          </article>`;
+        }).join("");
+      }
+      function openBook(id) {
+        currentVehicle = vehicles.find(v => v.id === id);
+        const max = new Date(); max.setDate(max.getDate() + RULES.advanceDays);
+        document.getElementById("modalTitle").textContent = `Book ${currentVehicle.name}`;
+        document.getElementById("modalBody").innerHTML = `<form onsubmit="submitBooking(event)" class="form-grid">
+          <label>Incharge Name<input name="name" required></label>
+          <label>Mobile Number<input name="mobile" inputmode="numeric" required></label>
+          <label>Zone<input name="zone" required></label>
+          <label>Fellowship<input name="fellowship" required></label>
+          <label>Booking Date<input name="date" type="date" min="${dateStr(today)}" max="${dateStr(max)}" value="${dateStr(today)}" required></label>
+          <label>Start Time<input name="start" type="time" required></label>
+          <label>End Time<input name="end" type="time" required></label>
+          <label class="full">Purpose / Notes<textarea name="purpose"></textarea></label>
+          <p class="full muted">Maximum ${RULES.maxHours} hours. Only up to ${RULES.advanceDays} days in advance. ${RULES.buffer} minute handover buffer is applied.</p>
+          <button class="primary full">Confirm Booking</button>
+        </form>`;
+        document.getElementById("modal").classList.add("open");
+      }
+      function submitBooking(e) {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        const b = { id:`BK-${Date.now().toString().slice(-6)}`, vehicle_id:currentVehicle.id, incharge_name:f.get("name"), mobile_number:phone(f.get("mobile")), zone:f.get("zone"), fellowship:f.get("fellowship"), booking_date:f.get("date"), start_time:f.get("start"), end_time:f.get("end"), purpose:f.get("purpose"), created_at:new Date().toISOString() };
+        b.duration = minutes(dateTime(b,"start"), dateTime(b,"end"));
+        if (b.mobile_number.length !== 10) return alert("Enter a valid 10 digit mobile number.");
+        if (b.duration <= 0 || b.duration > RULES.maxHours * 60) return alert(`Maximum booking duration is ${RULES.maxHours} hours.`);
+        if (b.booking_date === dateStr(today) && dateTime(b,"start") < new Date()) return alert("Past time bookings are not allowed.");
+        const sameDay = bookings.filter(x => x.booking_date === b.booking_date && x.status !== "completed");
+        if (sameDay.filter(x => phone(x.mobile_number) === b.mobile_number || x.zone.toLowerCase() === String(b.zone).toLowerCase()).length >= RULES.maxPerDay) return alert("Same mobile number or zone can book only 2 vehicles per day.");
+        const overlaps = sameDay.filter(x => dateTime(b,"start") < new Date(dateTime(x,"end").getTime()+RULES.buffer*60000) && dateTime(b,"end") > new Date(dateTime(x,"start").getTime()-RULES.buffer*60000));
+        if (overlaps.some(x => x.vehicle_id === b.vehicle_id)) return alert("This vehicle already has a booking in that slot.");
+        if (overlaps.filter(x => phone(x.mobile_number) === b.mobile_number || x.zone.toLowerCase() === String(b.zone).toLowerCase()).length >= RULES.maxSimultaneous) return alert("Same mobile number or zone can hold only 2 vehicles at the same time.");
+        b.status = dateTime(b,"start") <= new Date() && dateTime(b,"end") >= new Date() ? "active" : "upcoming";
+        bookings.push(b);
+        localStorage.setItem(key, JSON.stringify(bookings));
+        alert(`Booking confirmed: ${b.id}. Please contact current incharge for key handover.`);
+        closeModal(); render();
+      }
+      function openDetails(id) {
+        const v = vehicles.find(x => x.id === id), a = active(id);
+        document.getElementById("modalTitle").textContent = v.name;
+        document.getElementById("modalBody").innerHTML = a ? `<div class="panel"><p style="font-weight:800;">${a.incharge_name}</p><p class="muted">${a.mobile_number} · ${a.zone} · ${a.fellowship}</p><p>${a.start_time} - ${a.end_time}</p></div><div class="actions"><a class="button primary" href="tel:${a.mobile_number}">Call</a><a class="button" target="_blank" href="https://wa.me/91${a.mobile_number}">WhatsApp</a></div><button class="primary" style="width:100%;margin-top:12px;" onclick="completeBooking('${a.id}')">Complete Booking</button>` : `<p class="panel">Vehicle is available now.</p><button class="primary" style="width:100%;margin-top:12px;" onclick="openBook('${id}')">Book Vehicle</button>`;
+        document.getElementById("modal").classList.add("open");
+      }
+      function completeBooking(id) {
+        if (!confirm("Have you handed over the keys?")) return;
+        bookings = bookings.map(b => b.id === id ? {...b, status:"completed", completed_at:new Date().toISOString()} : b);
+        localStorage.setItem(key, JSON.stringify(bookings));
+        closeModal(); render();
+      }
+      function openMine() {
+        const mobile = prompt("Enter your mobile number");
+        if (!mobile) return;
+        const mine = bookings.filter(b => phone(b.mobile_number) === phone(mobile));
+        alert(mine.length ? mine.map(b => `${b.id} · ${b.vehicle_id} · ${b.booking_date} ${b.start_time}-${b.end_time} · ${b.status}`).join("\n") : "No bookings found for this mobile number.");
+      }
+      function closeModal() { document.getElementById("modal").classList.remove("open"); }
+      render();
+      setInterval(render, 30000);
+    </script>
+  </body>
+</html>
