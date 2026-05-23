@@ -3,7 +3,7 @@
 import { Phone, Send, KeyRound, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { Booking, Vehicle } from "@/lib/types";
-import { formatDuration, getActiveBooking, getBookingDateTime, getCurrentHolder, minutesBetween, userOwnsBooking } from "@/lib/utils";
+import { formatDisplayTime, formatDuration, getActiveBooking, getBookingDateTime, getCurrentHolder, minutesBetween, userOwnsBooking } from "@/lib/utils";
 import { Modal } from "./Modal";
 import { REQUIRE_MOBILE_CONFIRMATION_BEFORE_COMPLETION } from "../../config/bookingRules";
 
@@ -16,6 +16,7 @@ export function DetailModal({ vehicle, bookings, currentMobile, onClose, onBook,
     .filter((booking) => booking.vehicle_id === vehicle.id && booking.booking_date === today && booking.status !== "completed")
     .sort((a, b) => getBookingDateTime(a, "start").getTime() - getBookingDateTime(b, "start").getTime());
   const availableSlots = buildAvailableSlots(schedule);
+  const remainingMinutes = active ? minutesBetween(new Date(), getBookingDateTime(active, "end")) : 0;
 
   return (
     <Modal title={vehicle.name} subtitle="Today schedule, active holder, and key handover contact." onClose={onClose}>
@@ -26,10 +27,8 @@ export function DetailModal({ vehicle, bookings, currentMobile, onClose, onBook,
             <div className="mt-3 space-y-2 text-sm">
               <p className="text-lg font-bold text-ink">{active.incharge_name}</p>
               <p className="text-muted">{active.zone} - {active.fellowship}</p>
-              <p className="font-semibold text-ink">{active.start_time} - {active.end_time}</p>
-              <p className="font-bold text-red-700">
-                {minutesBetween(new Date(), getBookingDateTime(active, "end")) > 0 ? `${formatDuration(minutesBetween(new Date(), getBookingDateTime(active, "end")))} remaining` : "Booking time exceeded"}
-              </p>
+              <p className="font-semibold text-ink">{formatDisplayTime(active.start_time)} - {formatDisplayTime(active.end_time)}</p>
+              {remainingMinutes > 0 && <p className="font-bold text-red-700">{formatDuration(remainingMinutes)} remaining</p>}
             </div>
           ) : (
             <p className="mt-3 text-sm font-semibold text-emerald-700">Available now</p>
@@ -58,7 +57,7 @@ export function DetailModal({ vehicle, bookings, currentMobile, onClose, onBook,
             {schedule.length ? schedule.map((booking) => (
               <div key={booking.id} className="rounded-xl border border-line bg-white p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-ink">{booking.start_time} - {booking.end_time}</p>
+                  <p className="font-bold text-ink">{formatDisplayTime(booking.start_time)} - {formatDisplayTime(booking.end_time)}</p>
                   <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold capitalize text-muted">{booking.status}</span>
                 </div>
                 <p className="mt-1 text-sm text-muted">{booking.incharge_name} - {booking.zone}</p>
