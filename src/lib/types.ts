@@ -32,3 +32,13 @@ export type BookingFormInput = Omit<Booking, "id" | "duration" | "status" | "com
 export type BookingResult =
   | { ok: true; booking: Booking }
   | { ok: false; message: string };
+
+export type ContactInfo = {
+  name: string;
+  mobile_number: string;
+  isDefaultCoordinator?: boolean;
+};
+
+export type CompletionResult =
+  | { ok: true }
+  | { ok: false; message: string };
