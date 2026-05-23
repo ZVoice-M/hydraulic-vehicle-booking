@@ -3,12 +3,14 @@
 import { Phone, Send, KeyRound, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { Booking, Vehicle } from "@/lib/types";
-import { formatDuration, getActiveBooking, getBookingDateTime, getCurrentHolder, minutesBetween } from "@/lib/utils";
+import { formatDuration, getActiveBooking, getBookingDateTime, getCurrentHolder, minutesBetween, userOwnsBooking } from "@/lib/utils";
 import { Modal } from "./Modal";
+import { REQUIRE_MOBILE_CONFIRMATION_BEFORE_COMPLETION } from "../../config/bookingRules";
 
-export function DetailModal({ vehicle, bookings, onClose, onBook, onComplete }: { vehicle: Vehicle; bookings: Booking[]; onClose: () => void; onBook: () => void; onComplete: (bookingId: string) => void }) {
+export function DetailModal({ vehicle, bookings, currentMobile, onClose, onBook, onComplete }: { vehicle: Vehicle; bookings: Booking[]; currentMobile: string; onClose: () => void; onBook: () => void; onComplete: (bookingId: string, confirmedMobile?: string) => void }) {
   const active = getActiveBooking(vehicle.id, bookings);
   const holder = getCurrentHolder(vehicle.id, bookings);
+  const canCompleteActive = userOwnsBooking(active, currentMobile);
   const today = format(new Date(), "yyyy-MM-dd");
   const schedule = bookings
     .filter((booking) => booking.vehicle_id === vehicle.id && booking.booking_date === today && booking.status !== "completed")
@@ -23,7 +25,7 @@ export function DetailModal({ vehicle, bookings, onClose, onBook, onComplete }: 
           {active ? (
             <div className="mt-3 space-y-2 text-sm">
               <p className="text-lg font-bold text-ink">{active.incharge_name}</p>
-              <p className="text-muted">{active.zone} · {active.fellowship}</p>
+              <p className="text-muted">{active.zone} - {active.fellowship}</p>
               <p className="font-semibold text-ink">{active.start_time} - {active.end_time}</p>
               <p className="font-bold text-red-700">
                 {minutesBetween(new Date(), getBookingDateTime(active, "end")) > 0 ? `${formatDuration(minutesBetween(new Date(), getBookingDateTime(active, "end")))} remaining` : "Booking time exceeded"}
@@ -36,22 +38,18 @@ export function DetailModal({ vehicle, bookings, onClose, onBook, onComplete }: 
 
         <section className="rounded-2xl border border-line bg-white p-4">
           <p className="text-sm font-bold text-ink">Current key holder contact</p>
-          {holder ? (
-            <div className="mt-3">
-              <p className="font-bold text-ink">{holder.incharge_name}</p>
-              <p className="text-sm text-muted">{holder.mobile_number}</p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white" href={`tel:${holder.mobile_number}`}>
-                  <Phone className="h-4 w-4" /> Call
-                </a>
-                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink" href={`https://wa.me/91${holder.mobile_number}`} target="_blank">
-                  <Send className="h-4 w-4" /> WhatsApp
-                </a>
-              </div>
+          <div className="mt-3">
+            <p className="font-bold text-ink">{holder.isDefaultCoordinator ? `Contact ${holder.name}` : holder.name}</p>
+            <p className="text-sm text-muted">{holder.mobile_number}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white" href={`tel:${holder.mobile_number}`}>
+                <Phone className="h-4 w-4" /> Call
+              </a>
+              <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink" href={`https://wa.me/91${holder.mobile_number}`} target="_blank">
+                <Send className="h-4 w-4" /> WhatsApp
+              </a>
             </div>
-          ) : (
-            <p className="mt-3 text-sm text-muted">No current holder.</p>
-          )}
+          </div>
         </section>
 
         <section>
@@ -63,7 +61,7 @@ export function DetailModal({ vehicle, bookings, onClose, onBook, onComplete }: 
                   <p className="font-bold text-ink">{booking.start_time} - {booking.end_time}</p>
                   <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold capitalize text-muted">{booking.status}</span>
                 </div>
-                <p className="mt-1 text-sm text-muted">{booking.incharge_name} · {booking.zone}</p>
+                <p className="mt-1 text-sm text-muted">{booking.incharge_name} - {booking.zone}</p>
               </div>
             )) : <p className="rounded-xl bg-gray-50 p-4 text-sm text-muted">No bookings today. Available slots are open.</p>}
           </div>
@@ -82,8 +80,11 @@ export function DetailModal({ vehicle, bookings, onClose, onBook, onComplete }: 
           <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white" onClick={onBook}>
             <Plus className="h-4 w-4" /> Book Vehicle
           </button>
-          {active && (
-            <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink" onClick={() => window.confirm("Have you handed over the keys?") && onComplete(active.id)}>
+          {active && canCompleteActive && (
+            <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink" onClick={() => {
+              const confirmedMobile = REQUIRE_MOBILE_CONFIRMATION_BEFORE_COMPLETION ? window.prompt("Confirm your registered mobile number") ?? "" : currentMobile;
+              if (window.confirm("Have you handed over the keys?")) onComplete(active.id, confirmedMobile);
+            }}>
               <KeyRound className="h-4 w-4" /> Complete
             </button>
           )}
