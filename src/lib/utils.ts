@@ -1,10 +1,10 @@
 import { addMinutes, differenceInMinutes, format, isAfter, isBefore, parseISO } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { clsx, type ClassValue } from "clsx";
-import { HANDOVER_BUFFER_MINUTES, MAX_BOOKING_HOURS, MAX_BOOKINGS_PER_DAY, MAX_SIMULTANEOUS_VEHICLES } from "../../config/bookingRules";
-import { Booking, BookingFormInput, BookingResult, VehicleColor } from "./types";
+import { DEFAULT_COORDINATOR_NAME, DEFAULT_COORDINATOR_NUMBER, HANDOVER_BUFFER_MINUTES, MAX_BOOKING_HOURS, MAX_BOOKINGS_PER_DAY, MAX_SIMULTANEOUS_VEHICLES } from "../../config/bookingRules";
+import { Booking, BookingFormInput, BookingResult, ContactInfo, VehicleColor } from "./types";
 
-export const bookingRulesText = `${MAX_BOOKING_HOURS}h max · ${MAX_BOOKINGS_PER_DAY}/day`;
+export const bookingRulesText = `${MAX_BOOKING_HOURS}h max - ${MAX_BOOKINGS_PER_DAY}/day`;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,10 +35,25 @@ export function getActiveBooking(vehicleId: string, bookings: Booking[]) {
   });
 }
 
-export function getCurrentHolder(vehicleId: string, bookings: Booking[]) {
-  return getActiveBooking(vehicleId, bookings) ?? bookings
-    .filter((booking) => booking.vehicle_id === vehicleId && booking.status !== "completed")
-    .sort((a, b) => getBookingDateTime(a, "start").getTime() - getBookingDateTime(b, "start").getTime())[0];
+export function getCurrentHolder(vehicleId: string, bookings: Booking[]): ContactInfo {
+  const now = new Date();
+  const today = format(now, "yyyy-MM-dd");
+  const booking = getActiveBooking(vehicleId, bookings) ?? bookings
+    .filter((item) => item.vehicle_id === vehicleId && item.booking_date === today && !isAfter(getBookingDateTime(item, "end"), now))
+    .sort((a, b) => getBookingDateTime(b, "end").getTime() - getBookingDateTime(a, "end").getTime())[0];
+
+  if (booking) {
+    return {
+      name: booking.incharge_name,
+      mobile_number: booking.mobile_number
+    };
+  }
+
+  return {
+    name: DEFAULT_COORDINATOR_NAME,
+    mobile_number: DEFAULT_COORDINATOR_NUMBER,
+    isDefaultCoordinator: true
+  };
 }
 
 export function getVehicleAccent(color: VehicleColor) {
@@ -53,6 +68,13 @@ export function getVehicleAccent(color: VehicleColor) {
 
 export function normalizePhone(value: string) {
   return value.replace(/\D/g, "").slice(-10);
+}
+
+export function userOwnsBooking(booking: Pick<Booking, "mobile_number"> | undefined, currentMobile: string) {
+  if (!booking) return false;
+  const bookingMobile = normalizePhone(booking.mobile_number);
+  const userMobile = normalizePhone(currentMobile);
+  return bookingMobile.length === 10 && userMobile.length === 10 && bookingMobile === userMobile;
 }
 
 export function validateBooking(input: BookingFormInput, bookings: Booking[]): BookingResult {
