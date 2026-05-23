@@ -11,7 +11,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getBookingDateTime(booking: Pick<Booking, "booking_date" | "start_time" | "end_time">, edge: "start" | "end") {
-  return parseISO(`${booking.booking_date}T${edge === "start" ? booking.start_time : booking.end_time}:00`);
+  const rawTime = edge === "start" ? booking.start_time : booking.end_time;
+  return parseISO(`${booking.booking_date}T${normalizeTimeForDate(rawTime)}`);
+}
+
+export function normalizeTimeForDate(time: string) {
+  const [hours = "00", minutes = "00", seconds = "00"] = time.split(":");
+  return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
+}
+
+export function formatDisplayTime(time: string) {
+  const [hours = "00", minutes = "00"] = time.split(":");
+  return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
 }
 
 export function minutesBetween(start: Date, end: Date) {
@@ -31,7 +42,7 @@ export function getActiveBooking(vehicleId: string, bookings: Booking[]) {
   const now = new Date();
   return bookings.find((booking) => {
     if (booking.vehicle_id !== vehicleId || booking.status === "completed") return false;
-    return !isBefore(now, getBookingDateTime(booking, "start")) && !isAfter(now, getBookingDateTime(booking, "end"));
+    return !isBefore(now, getBookingDateTime(booking, "start"));
   });
 }
 
