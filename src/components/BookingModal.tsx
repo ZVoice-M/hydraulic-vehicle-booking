@@ -5,7 +5,7 @@ import { addDays, format } from "date-fns";
 import { Clock, Send } from "lucide-react";
 import { MAX_ADVANCE_BOOKING_DAYS, MAX_BOOKING_HOURS } from "../../config/bookingRules";
 import { Booking, BookingFormInput, Vehicle } from "@/lib/types";
-import { cn, formatDuration, getBookingDateTime, getVehicleAccent, minutesBetween } from "@/lib/utils";
+import { cn, formatDisplayTime, formatDuration, getBookingDateTime, getVehicleAccent, minutesBetween } from "@/lib/utils";
 import { Modal } from "./Modal";
 
 export function BookingModal({
@@ -95,8 +95,8 @@ export function BookingModal({
             <div className="space-y-2">
               {schedule.map((booking) => (
                 <div key={booking.id} className="rounded-xl bg-white px-3 py-2 text-sm text-ink">
-                  <span className="font-semibold">{booking.start_time} - {booking.end_time}</span>
-                  <span className="text-muted"> · {booking.incharge_name}</span>
+                  <span className="font-semibold">{formatDisplayTime(booking.start_time)} - {formatDisplayTime(booking.end_time)}</span>
+                  <span className="text-muted"> - {booking.incharge_name}</span>
                 </div>
               ))}
             </div>
