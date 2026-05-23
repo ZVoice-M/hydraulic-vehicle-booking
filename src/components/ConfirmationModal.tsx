@@ -1,12 +1,12 @@
 "use client";
 
 import { CheckCircle2, Phone, Send } from "lucide-react";
-import { Booking, Vehicle } from "@/lib/types";
+import { Booking, ContactInfo, Vehicle } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
 import { Modal } from "./Modal";
 
-export function ConfirmationModal({ booking, vehicle, currentHolder, onClose }: { booking: Booking; vehicle: Vehicle; currentHolder?: Booking; onClose: () => void }) {
-  const contact = currentHolder ?? booking;
+export function ConfirmationModal({ booking, vehicle, currentHolder, onClose }: { booking: Booking; vehicle: Vehicle; currentHolder: ContactInfo; onClose: () => void }) {
+  const contact = currentHolder;
   return (
     <Modal title="Booking confirmed" subtitle="Please contact current incharge for key handover." onClose={onClose}>
       <div className="space-y-4">
@@ -22,6 +22,7 @@ export function ConfirmationModal({ booking, vehicle, currentHolder, onClose }: 
           <Row label="Time" value={`${booking.start_time} - ${booking.end_time}`} />
           <Row label="Duration" value={formatDuration(booking.duration)} />
           <Row label="Incharge" value={booking.incharge_name} />
+          <Row label="Key Contact" value={contact.name} />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white" href={`tel:${contact.mobile_number}`}>
