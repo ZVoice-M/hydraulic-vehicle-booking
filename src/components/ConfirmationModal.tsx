@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Phone, Send } from "lucide-react";
 import { Booking, ContactInfo, Vehicle } from "@/lib/types";
-import { formatDuration } from "@/lib/utils";
+import { formatDisplayTime, formatDuration } from "@/lib/utils";
 import { Modal } from "./Modal";
 
 export function ConfirmationModal({ booking, vehicle, currentHolder, onClose }: { booking: Booking; vehicle: Vehicle; currentHolder: ContactInfo; onClose: () => void }) {
@@ -19,7 +19,7 @@ export function ConfirmationModal({ booking, vehicle, currentHolder, onClose }: 
         </div>
         <div className="grid gap-2 rounded-2xl border border-line bg-white p-4 text-sm">
           <Row label="Date" value={booking.booking_date} />
-          <Row label="Time" value={`${booking.start_time} - ${booking.end_time}`} />
+          <Row label="Time" value={`${formatDisplayTime(booking.start_time)} - ${formatDisplayTime(booking.end_time)}`} />
           <Row label="Duration" value={formatDuration(booking.duration)} />
           <Row label="Incharge" value={booking.incharge_name} />
           <Row label="Key Contact" value={contact.name} />
