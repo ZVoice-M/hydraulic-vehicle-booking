@@ -1,7 +1,7 @@
 "use client";
 
 import { Booking, Vehicle } from "@/lib/types";
-import { normalizePhone } from "@/lib/utils";
+import { formatDisplayTime, normalizePhone } from "@/lib/utils";
 import { Modal } from "./Modal";
 
 export function MyBookingsModal({ mobile, onMobileChange, bookings, vehicles, onClose }: { mobile: string; onMobileChange: (value: string) => void; bookings: Booking[]; vehicles: Vehicle[]; onClose: () => void }) {
@@ -24,8 +24,8 @@ export function MyBookingsModal({ mobile, onMobileChange, bookings, vehicles, on
                   <p className="font-bold text-ink">{vehicle?.name ?? booking.vehicle_id}</p>
                   <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold capitalize text-muted">{booking.status}</span>
                 </div>
-                <p className="mt-2 text-sm text-muted">{booking.booking_date} · {booking.start_time} - {booking.end_time}</p>
-                <p className="text-sm text-muted">{booking.zone} · {booking.fellowship}</p>
+                <p className="mt-2 text-sm text-muted">{booking.booking_date} - {formatDisplayTime(booking.start_time)} - {formatDisplayTime(booking.end_time)}</p>
+                <p className="text-sm text-muted">{booking.zone} - {booking.fellowship}</p>
               </div>
             );
           }) : (
