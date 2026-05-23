@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Download, Lock, Search, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { useBookingStore } from "@/lib/useBookingStore";
 import { Booking } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
@@ -10,7 +11,7 @@ import { formatDuration } from "@/lib/utils";
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
-  const { vehicles, bookings } = useBookingStore();
+  const { vehicles, bookings, adminCompleteBooking } = useBookingStore();
   const [filters, setFilters] = useState({ date: "", vehicle: "all", zone: "", fellowship: "", status: "all", search: "" });
 
   const filtered = useMemo(() => {
@@ -51,6 +52,7 @@ export default function AdminPage() {
             <Lock className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-ink">Admin Dashboard</h1>
+          <p className="mt-2 text-sm text-muted">Admin login is required for full booking history, filters, utilization, and export.</p>
           <label className="mt-6 block">
             <span className="mb-2 block text-sm font-semibold text-ink">Password</span>
             <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -59,6 +61,7 @@ export default function AdminPage() {
             <ShieldCheck className="h-4 w-4" />
             Login
           </button>
+          <p className="mt-4 text-xs text-muted">Use the admin password configured in your deployment settings.</p>
         </form>
       </main>
     );
@@ -131,7 +134,7 @@ export default function AdminPage() {
             <table className="min-w-[1000px] w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs font-bold uppercase tracking-wide text-muted">
                 <tr>
-                  {["Vehicle", "Incharge Name", "Mobile Number", "Zone", "Fellowship", "Start Time", "End Time", "Duration", "Status", "Created At"].map((header) => (
+                  {["Vehicle", "Incharge Name", "Mobile Number", "Zone", "Fellowship", "Start Time", "End Time", "Duration", "Status", "Created At", "Actions"].map((header) => (
                     <th key={header} className="px-4 py-3">{header}</th>
                   ))}
                 </tr>
@@ -151,6 +154,20 @@ export default function AdminPage() {
                       <td className="px-4 py-3">{formatDuration(booking.duration)}</td>
                       <td className="px-4 py-3"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold capitalize">{booking.status}</span></td>
                       <td className="px-4 py-3">{format(parseISO(booking.created_at), "dd MMM yyyy, HH:mm")}</td>
+                      <td className="px-4 py-3">
+                        {(booking.status === "active" || booking.status === "overdue") && (
+                          <button
+                            className="rounded-lg border border-line bg-white px-3 py-2 text-xs font-bold text-ink hover:border-gray-300"
+                            onClick={() => {
+                              const result = adminCompleteBooking(booking.id);
+                              if (result.ok) toast.success("Booking completed by admin");
+                              else toast.error(result.message);
+                            }}
+                          >
+                            Complete
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
