@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Car, Clock, History, KeyRound, LayoutDashboard, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { addDays, format, isSameDay, parseISO } from "date-fns";
-import { bookingRulesText, cn, formatDuration, getActiveBooking, getBookingDateTime, getCurrentHolder, getVehicleAccent, minutesBetween, userOwnsBooking } from "@/lib/utils";
+import { bookingRulesText, cn, formatDisplayTime, formatDuration, getActiveBooking, getBookingDateTime, getCurrentHolder, getVehicleAccent, minutesBetween, userOwnsBooking } from "@/lib/utils";
 import { REQUIRE_MOBILE_CONFIRMATION_BEFORE_COMPLETION } from "../../config/bookingRules";
 import { Booking, BookingFormInput, Vehicle } from "@/lib/types";
 import { useBookingStore } from "@/lib/useBookingStore";
@@ -114,7 +114,7 @@ export default function HomePage() {
                         <div className="mt-2 space-y-2">
                           <p className="font-semibold text-ink">{active.incharge_name}</p>
                           <p className="text-sm text-muted">
-                            {active.start_time} - {active.end_time} - {active.zone} - {active.fellowship}
+                            {formatDisplayTime(active.start_time)} - {formatDisplayTime(active.end_time)} - {active.zone} - {active.fellowship}
                           </p>
                           <LiveTimer booking={active} />
                         </div>
@@ -129,7 +129,7 @@ export default function HomePage() {
                         <div className="space-y-2">
                           {schedule.slice(0, 3).map((booking) => (
                             <div key={booking.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
-                              <span className="font-medium text-ink">{booking.start_time} - {booking.end_time}</span>
+                              <span className="font-medium text-ink">{formatDisplayTime(booking.start_time)} - {formatDisplayTime(booking.end_time)}</span>
                               <span className="truncate pl-3 text-muted">{booking.incharge_name}</span>
                             </div>
                           ))}
@@ -287,8 +287,8 @@ function StatusBadge({ status }: { status: "available" | "in_use" }) {
 function LiveTimer({ booking }: { booking: Booking }) {
   const end = getBookingDateTime(booking, "end");
   const remaining = minutesBetween(new Date(), end);
-  if (remaining <= 0) {
-    return <p className="text-sm font-semibold text-red-700">Booking time exceeded</p>;
+  if (!Number.isFinite(remaining) || remaining <= 0) {
+    return <p className="text-sm font-semibold text-red-700">In use</p>;
   }
   return <p className="text-sm font-semibold text-red-700">{formatDuration(remaining)} remaining</p>;
 }
